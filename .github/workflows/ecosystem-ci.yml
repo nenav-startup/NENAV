@@ -1,0 +1,29 @@
+name: NENAV Ecosystem CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate-ecosystem:
+    name: Validate Ecosystem & Submodules
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout NENAV Orchestrator
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          token: ${{ secrets.ECOSYSTEM_CI_PAT || github.token }}
+
+      - name: Run Integrity Validator
+        run: |
+          chmod +x scripts/*.sh
+          ./scripts/validate-ecosystem.sh
+
+      - name: Validate OpenAPI Specifications
+        uses: char0n/swagger-editor-validate@v1
+        with:
+          definition-file: contracts/openapi/nenav-api.v1.yaml

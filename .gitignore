@@ -1,0 +1,37 @@
+# Operating System Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Secrets & Environment variables
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.cert
+
+# Build & Runtime Artifacts
+*.log
+tmp/
+temp/
+dist/
+build/
+coverage/
+
+# IDE & Editor Configuration
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+.project
+.settings/
+
+# Backup Files
+*.bak
+*.swp
+*~

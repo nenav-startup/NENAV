@@ -1,0 +1,326 @@
+openapi: 3.1.0
+info:
+  title: NENAV Core Marketplace API
+  description: Authoritative OpenAPI contract specification for the NENAV Ecosystem.
+  version: 1.0.0
+servers:
+  - url: https://api.nenav.com/v1
+    description: Production Gateway
+  - url: https://staging-api.nenav.com/v1
+    description: Staging Gateway
+  - url: http://localhost:8080/v1
+    description: Local Development Environment
+
+tags:
+  - name: Authentication
+    description: User, Professional, and Admin Authentication endpoints
+  - name: Marketplace
+    description: Service discovery, categories, and geosearch
+  - name: Bookings
+    description: Booking lifecycle, assignments, and status transitions
+  - name: Payments
+    description: Payment intents, escrow management, and payouts
+  - name: Support
+    description: Dispute handling and support desk interactions
+
+paths:
+  /auth/register:
+    post:
+      tags: [Authentication]
+      summary: Register a new customer or professional
+      operationId: registerUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: Registration successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          $ref: '#/components/responses/400BadRequest'
+        '409':
+          $ref: '#/components/responses/409Conflict'
+
+  /auth/login:
+    post:
+      tags: [Authentication]
+      summary: Authenticate user or professional with OTP or password
+      operationId: loginUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+
+  /services/nearby:
+    get:
+      tags: [Marketplace]
+      summary: Discover services and available professionals using PostGIS proximity
+      operationId: listNearbyServices
+      parameters:
+        - name: latitude
+          in: query
+          required: true
+          schema:
+            type: number
+            format: double
+        - name: longitude
+          in: query
+          required: true
+          schema:
+            type: number
+            format: double
+        - name: radius_km
+          in: query
+          schema:
+            type: number
+            default: 10.0
+        - name: category_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of available professionals and services
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  services:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/NearbyService'
+
+  /bookings:
+    post:
+      tags: [Bookings]
+      summary: Create a booking request
+      security:
+        - BearerAuth: []
+      operationId: createBooking
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBookingRequest'
+      responses:
+        '201':
+          description: Booking created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+        '400':
+          $ref: '#/components/responses/400BadRequest'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+
+  /bookings/{id}/status:
+    patch:
+      tags: [Bookings]
+      summary: Update booking status transition (e.g. accept, arrive, complete)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [CONFIRMED, IN_PROGRESS, COMPLETED, CANCELLED]
+      responses:
+        '200':
+          description: Status updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    RegisterRequest:
+      type: object
+      required: [phone_number, role, full_name]
+      properties:
+        phone_number:
+          type: string
+          example: "+919876543210"
+        role:
+          type: string
+          enum: [customer, professional]
+        full_name:
+          type: string
+          example: "Alex Sharma"
+
+    LoginRequest:
+      type: object
+      required: [phone_number, otp]
+      properties:
+        phone_number:
+          type: string
+        otp:
+          type: string
+          example: "123456"
+
+    AuthResponse:
+      type: object
+      required: [access_token, token_type, expires_in, user]
+      properties:
+        access_token:
+          type: string
+        token_type:
+          type: string
+          example: "Bearer"
+        expires_in:
+          type: integer
+          example: 3600
+        user:
+          $ref: '#/components/schemas/UserProfile'
+
+    UserProfile:
+      type: object
+      required: [id, phone_number, role, full_name]
+      properties:
+        id:
+          type: string
+          format: uuid
+        phone_number:
+          type: string
+        role:
+          type: string
+        full_name:
+          type: string
+
+    NearbyService:
+      type: object
+      required: [id, title, category, professional_name, distance_meters, rating]
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        category:
+          type: string
+        professional_name:
+          type: string
+        distance_meters:
+          type: number
+        rating:
+          type: number
+
+    CreateBookingRequest:
+      type: object
+      required: [service_id, scheduled_at, latitude, longitude, address]
+      properties:
+        service_id:
+          type: string
+          format: uuid
+        scheduled_at:
+          type: string
+          format: date-time
+        latitude:
+          type: number
+        longitude:
+          type: number
+        address:
+          type: string
+
+    Booking:
+      type: object
+      required: [id, customer_id, service_id, status, total_amount, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        customer_id:
+          type: string
+          format: uuid
+        professional_id:
+          type: string
+          format: uuid
+        service_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [REQUESTED, CONFIRMED, IN_PROGRESS, COMPLETED, CANCELLED]
+        total_amount:
+          type: number
+        currency:
+          type: string
+          default: "INR"
+        created_at:
+          type: string
+          format: date-time
+
+    ErrorResponse:
+      type: object
+      required: [error_code, message]
+      properties:
+        error_code:
+          type: string
+          example: "ERR_UNAUTHORIZED"
+        message:
+          type: string
+          example: "Authentication token is invalid or expired."
+        details:
+          type: array
+          items:
+            type: string
+
+  responses:
+    400BadRequest:
+      description: Invalid request payload
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    401Unauthorized:
+      description: Authentication missing or invalid
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    409Conflict:
+      description: Resource conflict
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'

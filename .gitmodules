@@ -1,0 +1,15 @@
+[submodule "repositories/NENAV-ADMIN"]
+	path = repositories/NENAV-ADMIN
+	url = https://github.com/nenav-startup/NENAV-ADMIN.git
+[submodule "repositories/NENAV-USER"]
+	path = repositories/NENAV-USER
+	url = https://github.com/nenav-startup/NENAV-USER.git
+[submodule "repositories/NENAV-PROF"]
+	path = repositories/NENAV-PROF
+	url = https://github.com/nenav-startup/NENAV-PROF.git
+[submodule "repositories/NENAV-SUPPORT"]
+	path = repositories/NENAV-SUPPORT
+	url = https://github.com/nenav-startup/NENAV-SUPPORT.git
+[submodule "repositories/NENAV-PRODUCT-MANAGEMENT"]
+	path = repositories/NENAV-PRODUCT-MANAGEMENT
+	url = https://github.com/nenav-startup/NENAV-PRODUCT-MANAGEMENT.git
