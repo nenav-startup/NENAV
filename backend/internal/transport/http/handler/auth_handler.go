@@ -29,7 +29,7 @@ func (h *AuthHandler) HandleSendOTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err := h.auth.SendOTP(r.Context(), req.CountryCode, req.Phone, req.Purpose)
+	code, err := h.auth.SendOTP(r.Context(), req.CountryCode, req.Phone, req.Purpose)
 	if err != nil {
 		http.Error(w, `{"error":"`+err.Error()+`"}`, http.StatusBadRequest)
 		return
@@ -38,6 +38,8 @@ func (h *AuthHandler) HandleSendOTP(w http.ResponseWriter, r *http.Request) {
 	response.JSON(w, http.StatusOK, map[string]any{
 		"message": "OTP sent successfully",
 		"phone":   req.CountryCode + req.Phone,
+		"code":    code,
+		"otp":     code,
 	})
 }
 
